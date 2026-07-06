@@ -8,6 +8,12 @@ Copyright Motorola Inc. 1986. C11 port 2026.
 
 ---
 
+# Version
+
+1.2.2
+
+---
+
 ## Files
 
 | File | Description |
@@ -21,6 +27,7 @@ Copyright Motorola Inc. 1986. C11 port 2026.
 | `testfile.asc` | Example M6809 source input |
 | `output.asc` | Reference M68000 output for `testfile.asc` |
 | `manual.txt` | Original users guide |
+| `DOS` | Original xlate09 files and DOS com file |
 
 ---
 
