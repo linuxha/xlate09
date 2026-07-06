@@ -1,0 +1,7 @@
+                    *********  Translation Error List  ***********
+
+File in : File out
+    75       157      LDA A,Z   EXAMPLE ERROR
+                               Invalid second (index) register
+    95       205      TFR X,PC   ANOTHER EXAMPLE ERROR!
+                               PC not supported
