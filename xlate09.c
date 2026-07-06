@@ -7,7 +7,7 @@
  * 1.1 : set lenopc after codes2 match (ln610)
  * 1.2 : include command line param test
  *
- * Converted from Pascal xlate09.pas to C11
+ * 1.2.1: Converted from Pascal xlate09.pas to C11
  */
 
 #include <stdio.h>
@@ -18,6 +18,8 @@
 
 /* Constants */
 #define VERSION        "1.2.2"
+#define VDATE          "2026-07-06"
+
 
 #define IMAGE_LEN      256  /* input line length */
 #define LABEL_LEN      8    /* label length */
@@ -59,36 +61,36 @@ typedef struct {
     char index;
     char first;
     char t2[CHAR_LEN + 1];           /* temp */
-    int posi;
-    int i;
-    int temp;
-    int temp2;
+    int  posi;
+    int  i;
+    int  temp;
+    int  temp2;
     char opcode[INST_NUM + 1][OPCODE_LEN + 1];
     char opcode2[INST_NUM + 1][OPCODE_LEN + 1];
     char expres[INST_NUM + 1][CHAR_LEN + 1];
     char expres2[INST_NUM + 1][CHAR_LEN + 1];
     char oprln[MAX_OPRLN][CHAR_LEN + 1];
     char macr_name[MAX_MACRO + 1][LABEL_LEN + 1];
-    int count;                       /* macro name array pointer */
+    int  count;                       /* macro name array pointer */
     bool macro;                      /* macro flag */
-    int lenopr;
+    int  lenopr;
     char regnum;
     char siz[OPCODE_LEN + 1];
     char opc1t[CHAR_LEN + 1];
-    int pos2;
+    int  pos2;
     char last1;
-    int lenopc;
-    int z;
+    int  lenopc;
+    int  z;
     char delim;
     char optab[OPCODE_LEN + 1];
-    int lenoptab;
+    int  lenoptab;
     char tempop[OPCODE_LEN + 1];
     bool match;
     bool match2;
     char strg1[CHAR_LEN + 1];
     char strg2[CHAR_LEN + 1];
     char strg3[CHAR_LEN + 1];
-    int auto_inc;                    /* auto increment/decrement counter */
+    int  auto_inc;                    /* auto increment/decrement counter */
     char esc;
 } State;
 
@@ -111,14 +113,17 @@ void cleanup(void);
 /* Find position of substring in string (like Pascal pos) */
 int str_pos(const char *str, const char *substr) {
     char *p = strstr(str, substr);
+    
     if (p == NULL)
         return 0;
+
     return (int)(p - str) + 1;
 }
 
 /* Replace first occurrence of strg1 with strg2 in oprln[z] */
 void replace(State *s, const char *strg1, const char *strg2, int z) {
     int pos = str_pos(s->oprln[z], strg1);
+
     if (pos != 0) {
         pos--;  /* Convert to 0-based index */
         int len1 = strlen(strg1);
@@ -146,9 +151,12 @@ void str_delete(char *str, int pos, int n) {
 void str_insert(char *str, const char *substr, int pos) {
     if (pos < 0 || pos > (int)strlen(str))
         return;
+
     char temp[CHAR_LEN + 1];
+
     strncpy(temp, str, pos);
     temp[pos] = '\0';
+
     strcat(temp, substr);
     strcat(temp, str + pos);
     strcpy(str, temp);
@@ -158,10 +166,13 @@ void str_insert(char *str, const char *substr, int pos) {
 char* str_copy(char *dest, const char *src, int pos, int len) {
     if (pos < 0 || pos >= (int)strlen(src))
         return dest;
+
     if (pos + len > (int)strlen(src))
         len = strlen(src) - pos;
+
     strncpy(dest, src + pos, len);
     dest[len] = '\0';
+
     return dest;
 }
 
@@ -170,11 +181,14 @@ void create_line(State *s, char delim, int z) {
             z, z, s->oprln[z][0]);
     int i = strlen(s->oprln[z]);
     char delim_str[2] = { delim, '\0' };
+
     replace(s, delim_str, " ", z);
     fprintf(stderr, "  After replace: pos2=%d, i=%d\n", s->pos2, i);
+
     if (s->pos2 != i && s->pos2 != 0) {
         fprintf(stderr, "  SPLITTING LINE\n");
         int z_idx = 5;
+
         while (z_idx > z && strlen(s->oprln[z_idx]) == 0)
             z_idx--;
         
@@ -193,14 +207,14 @@ void make_list(State *s, int temp) {
     replace(s, "o", "", temp);
     strcpy(s->t2, s->oprln[temp]);
     
-    if (s->S) str_insert(s->t2, "/A6", s->pos2);
-    if (s->U) str_insert(s->t2, "/A5", s->pos2);
+    if (s->S)  str_insert(s->t2, "/A6", s->pos2);
+    if (s->U)  str_insert(s->t2, "/A5", s->pos2);
     if (s->DP) str_insert(s->t2, "/A4", s->pos2);
-    if (s->Y) str_insert(s->t2, "/A1", s->pos2);
-    if (s->X) str_insert(s->t2, "/A0", s->pos2);
-    if (s->B) str_insert(s->t2, "/D1", s->pos2);
-    if (s->A) str_insert(s->t2, "/D0", s->pos2);
-    if (s->D) str_insert(s->t2, "/D0/D1", s->pos2);
+    if (s->Y)  str_insert(s->t2, "/A1", s->pos2);
+    if (s->X)  str_insert(s->t2, "/A0", s->pos2);
+    if (s->B)  str_insert(s->t2, "/D1", s->pos2);
+    if (s->A)  str_insert(s->t2, "/D0", s->pos2);
+    if (s->D)  str_insert(s->t2, "/D0/D1", s->pos2);
     
     strcpy(s->oprln[temp], s->t2);
     replace(s, "/", "", temp);
@@ -252,6 +266,7 @@ void create_file(State *s) {
             diagnostic(s, WARNING, s->t2);
         } else {
             int pos_dot = str_pos(s->oprln[s->z], ".");
+
             if (pos_dot > 0 && pos_dot < (int)strlen(s->oprln[s->z])) {
                 if (s->oprln[s->z][pos_dot] == ' ')
                     replace(s, ".", s->siz, s->z);
@@ -736,6 +751,7 @@ end_of_operand:
     /* Check for opcode in data base 2 */
     s->posi = 0;
     s->match2 = false;
+
     while (!s->match2 && s->posi <= INST_NUM && strlen(s->opcode2[s->posi]) > 0) {
         if (strcmp(s->opc, s->opcode2[s->posi]) == 0) {
             s->match2 = true;
@@ -750,8 +766,10 @@ end_of_operand:
         
         if (strcmp(s->opc1t, "PSH") == 0 || strcmp(s->opc1t, "PUL") == 0) {
             int pos2 = 0;
+
             while (pos2 < (int)strlen(s->opr)) {
                 char t = s->opr[pos2];
+
                 switch (t) {
                     case 'A': s->A = true; break;
                     case 'B': s->B = true; break;
@@ -770,7 +788,9 @@ end_of_operand:
                     default:
                         diagnostic(s, ERROR, "Invalid PSH/PUL register");
                 }
+
                 int comma = str_pos(s->opr, ",");
+
                 if (comma > 0) {
                     str_delete(s->opr, comma - 1, 1);
                     pos2 = comma - 1;
@@ -782,6 +802,7 @@ end_of_operand:
         
         /* Detect direct addr mode */
         s->direct = (s->opr[0] == '<');
+
         if (s->direct)
             str_delete(s->opr, 0, 1);
         
@@ -799,6 +820,7 @@ end_of_operand:
         
         /* Convert indexed addressing */
         int comma = str_pos(s->opr, ",");
+
         if (comma > 0) {
             s->direct = false;
             
@@ -969,6 +991,7 @@ void cleanup(void) {
 
 int main(int argc, char *argv[]) {
     State state;
+
     atexit(cleanup);
     
     if (argc < 3) {
@@ -989,9 +1012,9 @@ int main(int argc, char *argv[]) {
     }
     
     errorfile = fopen("error.txt", "w");
-    codes = fopen("codes.dbb", "r");
-    codes2 = fopen("codes2.dbb", "r");
-    stubxref = fopen("stubxref.dbb", "r");
+    codes     = fopen("codes.dbb", "r");
+    codes2    = fopen("codes2.dbb", "r");
+    stubxref  = fopen("stubxref.dbb", "r");
     
     if (!codes || !codes2 || !stubxref) {
         fprintf(stderr, "Error : database file(s) missing\n");
@@ -1000,7 +1023,7 @@ int main(int argc, char *argv[]) {
     
     init_state(&state);
     
-    printf("M6809 to M68000 Source Code Translator     Version %s\n", VERSION);
+    printf("M6809 to M68000 Source Code Translator     Version %s (%2)\n", VERSION, VDATE);
     printf("Systems Engg, E. Kilbride, Scotland\n");
     printf("Motorola Inc. Copyright 1986\n\n");
     printf("Reading database ........\n");
@@ -1008,9 +1031,11 @@ int main(int argc, char *argv[]) {
     /* Read translation database 1 */
     int posi = 0;
     char line[CHAR_LEN + 1];
+
     while (posi <= INST_NUM && fgets(line, sizeof(line), codes)) {
         line[strcspn(line, "\r\n")] = '\0';
         strcpy(state.opcode[posi], line);
+
         if (fgets(line, sizeof(line), codes)) {
             line[strcspn(line, "\r\n")] = '\0';
             strcpy(state.expres[posi], line);
@@ -1023,6 +1048,7 @@ int main(int argc, char *argv[]) {
     while (posi <= INST_NUM && fgets(line, sizeof(line), codes2)) {
         line[strcspn(line, "\r\n")] = '\0';
         strcpy(state.opcode2[posi], line);
+
         if (fgets(line, sizeof(line), codes2)) {
             line[strcspn(line, "\r\n")] = '\0';
             strcpy(state.expres2[posi], line);
